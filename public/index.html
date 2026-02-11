@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oberth Engine Design Suite</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Oberth Propulsion Suite</h1>
+            <nav>
+                <a href="index.html" class="active">Performance Analysis</a>
+                <a href="moc_viewer.html">Nozzle Design (MOC)</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2>Engine Performance Sizing</h2>
+            <p>Calculate specific impulse ($I_{sp}$) vs Mixture Ratio (O/F) for various propellant combinations.</p>
+
+            <form id="sizing-form">
+                <div class="form-group">
+                    <label for="pc">Chamber Pressure (Pa)</label>
+                    <input type="number" id="pc" value="10000000" step="100000">
+                </div>
+
+                <div class="form-group">
+                    <label for="pe">Exit Pressure (Pa)</label>
+                    <input type="number" id="pe" value="100000" step="1000">
+                </div>
+
+                <div class="form-group">
+                    <label for="fuel">Fuel / Oxidizer</label>
+                    <div class="input-group">
+                        <select id="fuel">
+                            <option value="RP-1">RP-1 (Kerosene)</option>
+                            <option value="LH2">Liquid Hydrogen (LH2)</option>
+                        </select>
+                        <span> / LOX</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn">Calculate Performance</button>
+            </form>
+        </section>
+
+        <section class="card results-section" style="display:none;" id="results-container">
+            <h3>Results</h3>
+            <div class="chart-container">
+                <canvas id="ispChart"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let ispChart = null;
+
+        document.getElementById('sizing-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pc = parseFloat(document.getElementById('pc').value);
+            const pe = parseFloat(document.getElementById('pe').value);
+            const fuel = document.getElementById('fuel').value;
+
+            // Adjust O/F range based on fuel
+            let of_range = [1.0, 4.0];
+            if (fuel === 'LH2') {
+                of_range = [3.0, 8.0];
+            }
+
+            try {
+                const response = await fetch('/api/performance', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        pc: pc,
+                        pe: pe,
+                        propellants: ['LOX', fuel],
+                        of_range: of_range
+                    })
+                });
+
+                if (!response.ok) throw new Error('API Request failed');
+
+                const data = await response.json();
+                renderChart(data);
+
+            } catch (error) {
+                console.error(error);
+                alert('Error calculating performance.');
+            }
+        });
+
+        function renderChart(data) {
+            document.getElementById('results-container').style.display = 'block';
+
+            const ctx = document.getElementById('ispChart').getContext('2d');
+
+            if (ispChart) {
+                ispChart.destroy();
+            }
+
+            ispChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.of.map(val => val.toFixed(2)),
+                    datasets: [{
+                        label: `Specific Impulse (s) - ${data.propellants.join('/')}`,
+                        data: data.isp,
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Mixture Ratio (O/F)' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Isp (s)' }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
