@@ -33,23 +33,15 @@ class RocketPerformance:
             peak_of = 2.3
             max_isp = 320 # Vacuum Isp
 
-        isps = []
-        for of in of_ratios:
-            # Simplified Isp curve shape
-            # Isp = max_isp * exp(-k * (of - peak_of)^2)
-
-            # Using different widths for rich vs lean side
-            if of < peak_of:
-                width = peak_of * 0.6
-            else:
-                width = peak_of * 1.0
-
-            val = max_isp * np.exp(-((of - peak_of)/width)**2)
-            isps.append(val)
+        # Vectorized calculation
+        # Simplified Isp curve shape: Isp = max_isp * exp(-k * (of - peak_of)^2)
+        # Using different widths for rich vs lean side
+        width = np.where(of_ratios < peak_of, peak_of * 0.6, peak_of * 1.0)
+        isps = max_isp * np.exp(-((of_ratios - peak_of)/width)**2)
 
         self.results = {
             'of': of_ratios,
-            'isp': isps,
+            'isp': isps.tolist(),
             'propellants': propellants
         }
         return self
