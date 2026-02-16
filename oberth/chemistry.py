@@ -41,7 +41,7 @@ class RocketPerformance:
 
         self.results = {
             'of': of_ratios,
-            'isp': isps.tolist(),
+            'isp': isps,
             'propellants': propellants
         }
         return self

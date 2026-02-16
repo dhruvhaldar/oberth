@@ -49,8 +49,8 @@ def calculate_performance(req: PerformanceRequest):
     engine.scan_mixture_ratio(req.propellants, req.of_range)
     # Convert numpy arrays to lists for JSON serialization
     results = {
-        "of": list(engine.results['of']),
-        "isp": list(engine.results['isp']),
+        "of": engine.results['of'].tolist(),
+        "isp": engine.results['isp'].tolist(),
         "propellants": engine.results['propellants']
     }
     return results
