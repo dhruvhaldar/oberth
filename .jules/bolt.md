@@ -5,3 +5,7 @@
 ## 2024-05-22 - [Optimized JSON Serialization of NumPy Arrays]
 **Learning:** Iterating over NumPy arrays using Python's `list()` constructor for JSON serialization is significantly slower (~4x) than using the optimized C-implementation `.tolist()`.
 **Action:** Always use `.tolist()` on NumPy arrays when preparing data for API responses, instead of `list()`.
+
+## 2024-05-23 - [Lazy Loading Heavy Visualization Libraries]
+**Learning:** `matplotlib.pyplot` is a heavy dependency that significantly slows down module import time (~1.7s penalty), affecting serverless cold starts.
+**Action:** Import `matplotlib.pyplot` inside plotting functions only, especially when the module is used in performance-critical API paths that don't need visualization.

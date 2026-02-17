@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 class RocketPerformance:
     def __init__(self, pc=100e5, pe=1e5):
@@ -53,6 +52,8 @@ class RocketPerformance:
         if not self.results:
             print("No results to plot. Run scan_mixture_ratio first.")
             return
+
+        import matplotlib.pyplot as plt
 
         of = self.results['of']
         isp = self.results['isp']

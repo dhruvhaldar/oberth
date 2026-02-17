@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 def isentropic_area_ratio(mach, gamma):
     """
@@ -82,6 +81,7 @@ class MethodOfCharacteristics:
         """
         Plots the characteristic net and nozzle contour.
         """
+        import matplotlib.pyplot as plt
         plt.figure(figsize=(10, 6))
 
         # Plot wall
