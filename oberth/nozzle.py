@@ -68,12 +68,15 @@ class MethodOfCharacteristics:
         end_xs = x[indices]
         end_ys = y[indices]
 
-        # Start points are all (0, 0)
-        start_points = np.zeros((self.lines, 2))
-        end_points = np.column_stack((end_xs, end_ys))
+        # Pre-allocate one array for the mesh (lines, 2 points, 2 coordinates)
+        # Start points are already 0 at mesh_array[:, 0, :]
+        mesh_array = np.zeros((self.lines, 2, 2))
 
-        # Stack into shape (lines, 2, 2) -> (line, point, coord) and convert to list
-        self.mesh = np.stack((start_points, end_points), axis=1).tolist()
+        # Fill end points
+        mesh_array[:, 1, 0] = end_xs
+        mesh_array[:, 1, 1] = end_ys
+
+        self.mesh = mesh_array.tolist()
 
         return self.wall_contour
 
