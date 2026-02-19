@@ -65,12 +65,16 @@ class MethodOfCharacteristics:
         # Indices corresponding to equal spacing in 'i' mapped to x array indices
         indices = ((np.arange(self.lines) + 1) / self.lines * (len(x) - 1)).astype(int)
 
+        # Remove duplicate indices to avoid redundant mesh lines
+        # This optimization reduces payload size and client-side rendering overhead
+        indices = np.unique(indices)
+
         end_xs = x[indices]
         end_ys = y[indices]
 
         # Pre-allocate one array for the mesh (lines, 2 points, 2 coordinates)
         # Start points are already 0 at mesh_array[:, 0, :]
-        mesh_array = np.zeros((self.lines, 2, 2))
+        mesh_array = np.zeros((len(indices), 2, 2))
 
         # Fill end points
         mesh_array[:, 1, 0] = end_xs
