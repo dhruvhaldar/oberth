@@ -9,3 +9,7 @@
 ## 2024-05-23 - [Lazy Loading Heavy Visualization Libraries]
 **Learning:** `matplotlib.pyplot` is a heavy dependency that significantly slows down module import time (~1.7s penalty), affecting serverless cold starts.
 **Action:** Import `matplotlib.pyplot` inside plotting functions only, especially when the module is used in performance-critical API paths that don't need visualization.
+
+## 2026-02-19 - [Avoid Redundant Mesh Lines in Visualization]
+**Learning:** When mapping a high number of requested visualization lines to a lower-resolution underlying simulation grid, integer index mapping can create duplicate entries.
+**Action:** Use `np.unique()` on the index array to filter out duplicates before generating the final mesh, reducing payload size and rendering overhead.
