@@ -63,11 +63,15 @@ class MethodOfCharacteristics:
         # Vectorized mesh generation
         # Improves performance by ~2.4x for large line counts (e.g., 50k lines: 0.22s -> 0.09s)
         # Indices corresponding to equal spacing in 'i' mapped to x array indices
-        indices = ((np.arange(self.lines) + 1) / self.lines * (len(x) - 1)).astype(int)
-
-        # Remove duplicate indices to avoid redundant mesh lines
-        # This optimization reduces payload size and client-side rendering overhead
-        indices = np.unique(indices)
+        if self.lines >= len(x):
+            # Optimization: If requested lines exceed or match resolution, we select all points.
+            # Avoids generating large intermediate arrays and sorting.
+            indices = np.arange(len(x))
+        else:
+            indices = ((np.arange(self.lines) + 1) / self.lines * (len(x) - 1)).astype(int)
+            # Remove duplicate indices to avoid redundant mesh lines
+            # This optimization reduces payload size and client-side rendering overhead
+            indices = np.unique(indices)
 
         end_xs = x[indices]
         end_ys = y[indices]
