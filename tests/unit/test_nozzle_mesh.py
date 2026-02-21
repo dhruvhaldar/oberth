@@ -30,3 +30,21 @@ def test_mesh_generation_unique_lines():
     # Assert that the number of lines is capped by the resolution (100 points in contour)
     # The current implementation uses 100 points for x
     assert len(mesh) <= 100, f"Expected at most 100 lines, but got {len(mesh)}"
+
+def test_mesh_generation_lines_edge_case():
+    """
+    Verifies that mesh lines are unique for edge cases like lines=99,
+    where floating point arithmetic might cause duplicates if not handled.
+    """
+    lines_requested = 99
+    moc = MethodOfCharacteristics(lines=lines_requested)
+
+    moc.solve()
+    mesh = moc.mesh
+
+    end_points = [(line[1][0], line[1][1]) for line in mesh]
+    unique_end_points = set(end_points)
+
+    assert len(mesh) == len(unique_end_points), f"Expected {len(unique_end_points)} unique lines, but got {len(mesh)}"
+    # For 99 lines with 100 points, we expect <= 99 lines (actually exactly 99 if unique)
+    assert len(mesh) <= 99

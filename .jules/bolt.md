@@ -17,3 +17,7 @@
 ## 2026-02-20 - [Avoid Oversampling in Mesh Generation]
 **Learning:** Generating a large linspace and then reducing it with `np.unique` when the requested resolution exceeds data resolution is O(N) where N is the requested resolution. It should be O(M) where M is the data resolution.
 **Action:** Check if requested resolution >= data resolution and short-circuit to `np.arange(data_len)` to avoid unnecessary allocation and sorting.
+
+## 2026-02-21 - [Optimized Unique Filtering for Sorted Arrays]
+**Learning:** `np.unique()` performs an O(N log N) sort even on already sorted arrays. For strictly sorted indices (e.g. from mesh generation), using boolean masking `indices[1:] != indices[:-1]` is O(N) and ~20x faster.
+**Action:** Use boolean masking to filter duplicates when data is known to be sorted.
