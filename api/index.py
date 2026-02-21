@@ -7,7 +7,6 @@ import os
 
 from oberth.nozzle import MethodOfCharacteristics
 from oberth.chemistry import RocketPerformance
-from oberth.cooling import bartz_equation
 from oberth.propellants import get_propellant
 
 app = FastAPI(title="Oberth API", description="Rocket Engine Design & Analysis Suite")

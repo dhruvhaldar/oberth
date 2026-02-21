@@ -1,4 +1,8 @@
 import numpy as np
+import math
+
+# Pre-calculated constant for tan(15 degrees)
+TAN_15_DEG = 0.2679491924311227
 
 def isentropic_area_ratio(mach, gamma):
     """
@@ -34,11 +38,11 @@ class MethodOfCharacteristics:
         # Throat radius (normalized)
         rt = 1.0
         # Exit radius based on area ratio
-        re = np.sqrt(expansion_ratio) * rt
+        re = math.sqrt(expansion_ratio) * rt
 
         # Estimate nozzle length (approx 80% of 15-degree cone)
         # (Re - Rt) / tan(15 deg)
-        l_cone = (re - rt) / np.tan(np.deg2rad(15))
+        l_cone = (re - rt) / TAN_15_DEG
         length = 0.8 * l_cone
 
         x = np.linspace(0, length, 100)
@@ -70,8 +74,9 @@ class MethodOfCharacteristics:
         else:
             indices = ((np.arange(self.lines) + 1) / self.lines * (len(x) - 1)).astype(int)
             # Remove duplicate indices to avoid redundant mesh lines
-            # This optimization reduces payload size and client-side rendering overhead
-            indices = np.unique(indices)
+            # Use boolean masking (O(N)) instead of np.unique (O(N log N)) since indices are sorted
+            if len(indices) > 0:
+                indices = indices[np.concatenate(([True], indices[1:] != indices[:-1]))]
 
         end_xs = x[indices]
         end_ys = y[indices]
