@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
@@ -10,6 +11,8 @@ from oberth.chemistry import RocketPerformance
 from oberth.propellants import get_propellant
 
 app = FastAPI(title="Oberth API", description="Rocket Engine Design & Analysis Suite")
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
     CORSMiddleware,
