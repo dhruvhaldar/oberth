@@ -23,8 +23,16 @@ class MethodOfCharacteristics:
     def __init__(self, gamma=1.2, lines=20):
         self.gamma = gamma
         self.lines = lines
-        self.mesh = []
-        self.wall_contour = []
+        self.mesh_array = np.array([])
+        self.contour_array = np.array([])
+
+    @property
+    def mesh(self):
+        return self.mesh_array.tolist() if self.mesh_array.size > 0 else []
+
+    @property
+    def wall_contour(self):
+        return self.contour_array.tolist() if self.contour_array.size > 0 else []
 
     def solve(self, expansion_ratio=25):
         """
@@ -59,7 +67,7 @@ class MethodOfCharacteristics:
             y = np.full_like(x, rt)
 
         # Optimized list creation using numpy (approx 15% faster than list(zip(...)))
-        self.wall_contour = np.column_stack((x, y)).tolist()
+        self.contour_array = np.column_stack((x, y))
 
         # Generate dummy characteristics for visualization
         # In real MOC, these are lines of constant Riemann invariant
@@ -89,7 +97,7 @@ class MethodOfCharacteristics:
         mesh_array[:, 1, 0] = end_xs
         mesh_array[:, 1, 1] = end_ys
 
-        self.mesh = mesh_array.tolist()
+        self.mesh_array = mesh_array
 
         return self.wall_contour
 

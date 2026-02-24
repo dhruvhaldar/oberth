@@ -33,8 +33,12 @@ def calculate_nozzle(req: NozzleRequest):
     Generates nozzle contour using Method of Characteristics.
     """
     moc = MethodOfCharacteristics(gamma=req.gamma, lines=req.lines)
-    contour = moc.solve(expansion_ratio=req.expansion_ratio)
-    return {"contour": contour, "mesh": moc.mesh}
+    moc.solve(expansion_ratio=req.expansion_ratio)
+    # Return rounded values to reduce JSON payload size
+    return {
+        "contour": moc.contour_array.round(5).tolist(),
+        "mesh": moc.mesh_array.round(5).tolist()
+    }
 
 class PerformanceRequest(BaseModel):
     pc: float = 100e5 # Pa
