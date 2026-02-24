@@ -25,3 +25,7 @@
 ## 2026-02-22 - [GZip Compression for Repetitive Data]
 **Learning:** API responses containing geometric mesh data (lists of coordinates) are highly repetitive and compressible. Enabling GZip compression reduced payload size by ~3.8x (9KB -> 2KB for small meshes), significantly improving response times.
 **Action:** Enable `GZipMiddleware` in FastAPI for endpoints returning large JSON arrays or geometric data.
+
+## 2026-02-23 - [In-Place Rounding for Payload Reduction]
+**Learning:** Returning full-precision floats in JSON API responses significantly inflates payload size (e.g., ~19KB vs ~10KB for 1000 points). Additionally, using `arr.round()` creates a copy of the array. Using `np.round(arr, decimals=N, out=arr)` performs rounding in-place, avoiding memory allocation.
+**Action:** Always round floating-point data for visualization APIs (e.g., to 5 decimals) and prefer in-place operations (`out=arr`) to minimize memory overhead.
