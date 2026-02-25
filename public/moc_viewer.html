@@ -140,24 +140,30 @@
                 .attr("stroke-width", 2);
 
             // Draw Mesh (Characteristics)
-            if (data.mesh) {
+            if (data.mesh && data.mesh.length > 0) {
+                // Optimized rendering: Single path instead of thousands of lines
+                // Reduces DOM nodes from 2*N to 1
+                let pathData = "";
                 data.mesh.forEach(line => {
-                    svg.append("line")
-                        .attr("x1", xScale(line[0][0]))
-                        .attr("y1", yScale(line[0][1]))
-                        .attr("x2", xScale(line[1][0]))
-                        .attr("y2", yScale(line[1][1]))
-                        .attr("stroke", "blue")
-                        .attr("stroke-opacity", 0.3);
+                    const x1 = xScale(line[0][0]);
+                    const y1 = yScale(line[0][1]);
+                    const x2 = xScale(line[1][0]);
+                    const y2 = yScale(line[1][1]);
 
-                    svg.append("line")
-                        .attr("x1", xScale(line[0][0]))
-                        .attr("y1", yScale(-line[0][1]))
-                        .attr("x2", xScale(line[1][0]))
-                        .attr("y2", yScale(-line[1][1]))
-                        .attr("stroke", "blue")
-                        .attr("stroke-opacity", 0.3);
+                    // Upper mesh line
+                    pathData += `M${x1},${y1}L${x2},${y2}`;
+
+                    // Lower mesh line (symmetric)
+                    const y1_lower = yScale(-line[0][1]);
+                    const y2_lower = yScale(-line[1][1]);
+                    pathData += `M${x1},${y1_lower}L${x2},${y2_lower}`;
                 });
+
+                svg.append("path")
+                    .attr("d", pathData)
+                    .attr("stroke", "blue")
+                    .attr("stroke-opacity", 0.3)
+                    .attr("fill", "none");
             }
         }
     </script>
