@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 import os
 import numpy as np
+from functools import lru_cache
 
 from oberth.nozzle import MethodOfCharacteristics
 from oberth.chemistry import RocketPerformance
@@ -28,13 +29,10 @@ class NozzleRequest(BaseModel):
     gamma: float = 1.2
     lines: int = 20
 
-@app.post("/api/nozzle")
-def calculate_nozzle(req: NozzleRequest):
-    """
-    Generates nozzle contour using Method of Characteristics.
-    """
-    moc = MethodOfCharacteristics(gamma=req.gamma, lines=req.lines)
-    moc.solve(expansion_ratio=req.expansion_ratio)
+@lru_cache(maxsize=128)
+def _compute_nozzle(expansion_ratio: float, gamma: float, lines: int):
+    moc = MethodOfCharacteristics(gamma=gamma, lines=lines)
+    moc.solve(expansion_ratio=expansion_ratio)
     # Use in-place rounding to avoid intermediate allocations and reduce JSON payload size
     np.round(moc.contour_array, decimals=5, out=moc.contour_array)
     np.round(moc.mesh_array, decimals=5, out=moc.mesh_array)
@@ -43,19 +41,23 @@ def calculate_nozzle(req: NozzleRequest):
         "mesh": moc.mesh_array.tolist()
     }
 
+@app.post("/api/nozzle")
+def calculate_nozzle(req: NozzleRequest):
+    """
+    Generates nozzle contour using Method of Characteristics.
+    """
+    return _compute_nozzle(req.expansion_ratio, req.gamma, req.lines)
+
 class PerformanceRequest(BaseModel):
     pc: float = 100e5 # Pa
     pe: float = 1e5   # Pa
     propellants: List[str] = ["LOX", "RP-1"]
     of_range: List[float] = [1.5, 4.0]
 
-@app.post("/api/performance")
-def calculate_performance(req: PerformanceRequest):
-    """
-    Calculates Isp vs O/F ratio.
-    """
-    engine = RocketPerformance(pc=req.pc, pe=req.pe)
-    engine.scan_mixture_ratio(req.propellants, req.of_range)
+@lru_cache(maxsize=128)
+def _compute_performance(pc: float, pe: float, propellants: tuple, of_range: tuple):
+    engine = RocketPerformance(pc=pc, pe=pe)
+    engine.scan_mixture_ratio(list(propellants), list(of_range))
 
     # Use in-place rounding to reduce JSON payload size (~47%) and avoid intermediate allocations
     of_array = engine.results['of']
@@ -63,12 +65,23 @@ def calculate_performance(req: PerformanceRequest):
     np.round(of_array, decimals=5, out=of_array)
     np.round(isp_array, decimals=5, out=isp_array)
 
-    results = {
+    return {
         "of": of_array.tolist(),
         "isp": isp_array.tolist(),
         "propellants": engine.results['propellants']
     }
-    return results
+
+@app.post("/api/performance")
+def calculate_performance(req: PerformanceRequest):
+    """
+    Calculates Isp vs O/F ratio.
+    """
+    return _compute_performance(
+        req.pc,
+        req.pe,
+        tuple(req.propellants),
+        tuple(req.of_range)
+    )
 
 @app.get("/api/health")
 def health_check():

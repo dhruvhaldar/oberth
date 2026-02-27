@@ -33,3 +33,7 @@
 ## 2026-02-24 - [Avoid np.column_stack for Simple Arrays]
 **Learning:** `np.column_stack` carries significant overhead for small to medium arrays (~15% slower than pre-allocation for N=100-100k).
 **Action:** For simple 2D array construction where dimensions are known, prefer `np.empty((N, M))` followed by direct column assignment over `np.column_stack`.
+
+## 2026-02-25 - [Caching Expensive API Computations]
+**Learning:** API endpoints for interactive visualization tools (like nozzle contour or performance mapping) often receive rapid sequential requests with identical parameters from a single user tweaking UI sliders. Recomputing geometric coordinates or chemistry datasets repeatedly adds significant latency.
+**Action:** Use `functools.lru_cache` to memoize the core computational functions in FastAPI endpoints. Remember to convert unhashable parameters like lists or dicts to tuples before passing them to the cached function to satisfy Python's hashing requirements.
