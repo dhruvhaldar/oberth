@@ -37,3 +37,7 @@
 ## 2026-02-25 - [Caching Expensive API Computations]
 **Learning:** API endpoints for interactive visualization tools (like nozzle contour or performance mapping) often receive rapid sequential requests with identical parameters from a single user tweaking UI sliders. Recomputing geometric coordinates or chemistry datasets repeatedly adds significant latency.
 **Action:** Use `functools.lru_cache` to memoize the core computational functions in FastAPI endpoints. Remember to convert unhashable parameters like lists or dicts to tuples before passing them to the cached function to satisfy Python's hashing requirements.
+
+## 2026-02-26 - [Pre-serializing Cached FastAPI Responses]
+**Learning:** Caching dictionaries with `lru_cache` in FastAPI still incurs significant serialization overhead on every cache hit, as FastAPI must run `jsonable_encoder` and `json.dumps` on the identical dictionary repeatedly. For large arrays (like mesh data), this overhead can be up to ~6x slower than raw string returns.
+**Action:** For cached API responses returning large static structures, use `json.dumps(dict, separators=(',', ':'))` inside the cached function and return a FastAPI `Response(content=json_str, media_type="application/json")` directly. This entirely bypasses Pydantic and JSON encoding on cache hits.
