@@ -2,9 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List, Optional
 import os
+import json
 import numpy as np
 from functools import lru_cache
 
@@ -36,10 +38,13 @@ def _compute_nozzle(expansion_ratio: float, gamma: float, lines: int):
     # Use in-place rounding to avoid intermediate allocations and reduce JSON payload size
     np.round(moc.contour_array, decimals=5, out=moc.contour_array)
     np.round(moc.mesh_array, decimals=5, out=moc.mesh_array)
-    return {
+    result = {
         "contour": moc.contour_array.tolist(),
         "mesh": moc.mesh_array.tolist()
     }
+    # Pre-serialize to JSON to avoid FastAPI/pydantic overhead on cache hits
+    json_str = json.dumps(result, separators=(',', ':'))
+    return Response(content=json_str, media_type="application/json")
 
 @app.post("/api/nozzle")
 def calculate_nozzle(req: NozzleRequest):
@@ -65,11 +70,14 @@ def _compute_performance(pc: float, pe: float, propellants: tuple, of_range: tup
     np.round(of_array, decimals=5, out=of_array)
     np.round(isp_array, decimals=5, out=isp_array)
 
-    return {
+    result = {
         "of": of_array.tolist(),
         "isp": isp_array.tolist(),
         "propellants": engine.results['propellants']
     }
+    # Pre-serialize to JSON to avoid FastAPI/pydantic overhead on cache hits
+    json_str = json.dumps(result, separators=(',', ':'))
+    return Response(content=json_str, media_type="application/json")
 
 @app.post("/api/performance")
 def calculate_performance(req: PerformanceRequest):
