@@ -61,8 +61,11 @@ class MethodOfCharacteristics:
         # rt = A(-L)^2 + re  => A = (rt - re) / L^2
 
         if length > 0:
-            A = (rt - re) / (length**2)
-            y = A * (x - length)**2 + re
+            # Performance Optimization: direct multiplication (x*x) avoids the slower ** exponentiation
+            # operator in NumPy and prevents intermediate array allocations for powers.
+            A = (rt - re) / (length * length)
+            diff = x - length
+            y = A * (diff * diff) + re
         else:
             y = np.full_like(x, rt)
 
