@@ -45,3 +45,7 @@
 ## 2026-02-27 - [JavaScript String Concatenation Bottleneck in SVG Rendering]
 **Learning:** Iteratively concatenating large strings using `+=` inside a loop (like building complex SVG `d` paths from thousands of coordinate pairs) causes excessive memory reallocation in JavaScript engines. Benchmarks showed O(N) concatenation for 50k segments takes ~108ms.
 **Action:** Use `Array.prototype.map()` to generate an array of sub-strings, followed by `.join('')`. This allows the JS engine to allocate the exact memory needed once, executing in ~48ms (~55% faster) for large datasets.
+
+## 2026-03-05 - [NumPy Array Exponentiation Overhead]
+**Learning:** Using the `**` operator for squaring NumPy arrays (e.g., `(x - length)**2`) carries significant overhead due to intermediate array allocations and general power function processing, making it measurably slower than direct array multiplication (e.g., `diff * diff`).
+**Action:** For simple powers like squaring NumPy arrays, calculate the base array once and use direct multiplication (`arr * arr`) instead of the `**` operator to improve performance and reduce memory allocations.
