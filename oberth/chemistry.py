@@ -36,7 +36,11 @@ class RocketPerformance:
         # Simplified Isp curve shape: Isp = max_isp * exp(-k * (of - peak_of)^2)
         # Using different widths for rich vs lean side
         width = np.where(of_ratios < peak_of, peak_of * 0.6, peak_of * 1.0)
-        isps = max_isp * np.exp(-((of_ratios - peak_of)/width)**2)
+
+        # Performance Optimization: direct multiplication (norm_diff * norm_diff) avoids
+        # the slower ** exponentiation operator in NumPy and prevents intermediate array allocations.
+        norm_diff = (of_ratios - peak_of) / width
+        isps = max_isp * np.exp(-(norm_diff * norm_diff))
 
         self.results = {
             'of': of_ratios,
