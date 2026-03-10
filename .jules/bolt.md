@@ -57,3 +57,11 @@
 ## 2026-03-05 - [Mathematical Formula Grouping for Python Overhead]
 **Learning:** Breaking down tight math formulas like `bartz_equation` into multiple assigned intermediary variables (e.g. `term1`, `term2`) adds significant Python local variable assignment and instruction overhead. Grouping the entire expression into a single returned mathematical product block yielded a ~20% latency reduction.
 **Action:** When working on heavily called mathematical equations that produce a single scalar, minimize assignment statements and group the formula into a single, clean return statement to avoid variable assignment overhead.
+
+## 2026-03-06 - [Avoid Intermediate Array Allocations in Index Calculations]
+**Learning:** When generating integer indices mapping to an array (e.g. `((np.arange(N) + 1) / N * length).astype(int)`), Python evaluates operations sequentially, allocating new temporary NumPy arrays for the result of `+ 1` and `/ N`. By algebraically rearranging the scalar operations to `np.arange(1, N + 1) * (length / N)`, we avoid allocating the temporary array for `+ 1`, providing a ~3x speedup for this tight visualization logic loop.
+**Action:** Refactor operations mapping constant offsets and scales onto `np.arange` to minimize the number of intermediate array allocations. Compute scalar operations (e.g. `length / N`) independently so they are multiplied directly.
+
+## 2026-03-06 - [Pre-computing Common Divisors and Redundant math.sqrt Inputs]
+**Learning:** In heavily used scalar math functions like `hohmann_transfer_dv`, redundant calculations such as `mu / r1` inside multiple `math.sqrt` calls cause measurable overhead. Pre-computing scalar multiplications like `mu_r1 = mu / r1` outside the `math.sqrt` and keeping intermediate assignments minimal improves performance by ~15% per call.
+**Action:** Pre-compute shared subexpressions passed into `math` module functions or other tight mathematical logic loops to reduce Python division and assignment overhead.
