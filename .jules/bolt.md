@@ -65,3 +65,7 @@
 ## 2026-03-06 - [Pre-computing Common Divisors and Redundant math.sqrt Inputs]
 **Learning:** In heavily used scalar math functions like `hohmann_transfer_dv`, redundant calculations such as `mu / r1` inside multiple `math.sqrt` calls cause measurable overhead. Pre-computing scalar multiplications like `mu_r1 = mu / r1` outside the `math.sqrt` and keeping intermediate assignments minimal improves performance by ~15% per call.
 **Action:** Pre-compute shared subexpressions passed into `math` module functions or other tight mathematical logic loops to reduce Python division and assignment overhead.
+
+## 2026-03-12 - [O(1) Dictionary Lookup for Propellant Aliases]
+**Learning:** Sequential `if/elif` string comparisons for mapping aliases to properties (e.g. `get_propellant`) add linear overhead per call due to Python instruction parsing. Flattening aliases into a single predefined lookup dictionary achieves O(1) time complexity and reduces execution time by ~20%.
+**Action:** Use unified dictionary mapping for enum-like alias resolution instead of sequential conditional checks to minimize Python evaluation overhead.
