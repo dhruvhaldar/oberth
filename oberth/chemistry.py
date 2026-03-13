@@ -35,12 +35,13 @@ class RocketPerformance:
         # Vectorized calculation
         # Simplified Isp curve shape: Isp = max_isp * exp(-k * (of - peak_of)^2)
         # Using different widths for rich vs lean side
-        width = np.where(of_ratios < peak_of, peak_of * 0.6, peak_of * 1.0)
 
-        # Performance Optimization: direct multiplication (norm_diff * norm_diff) avoids
-        # the slower ** exponentiation operator in NumPy and prevents intermediate array allocations.
-        norm_diff = (of_ratios - peak_of) / width
-        isps = max_isp * np.exp(-(norm_diff * norm_diff))
+        # Performance Optimization: calculate the diff first to use for both the mask and the final
+        # computation. Pre-calculating the inverted squared widths eliminates an array division
+        # and an intermediate width array allocation, reducing execution time.
+        diff = of_ratios - peak_of
+        inv_width_sq = np.where(diff < 0, 1.0 / (peak_of * 0.6)**2, 1.0 / peak_of**2)
+        isps = max_isp * np.exp(-inv_width_sq * (diff * diff))
 
         self.results = {
             'of': of_ratios,
