@@ -91,9 +91,9 @@ class MethodOfCharacteristics:
             # Avoids generating large intermediate arrays and sorting.
             indices = np.arange(len(x))
         else:
-            # Performance Optimization: Using np.arange(1, lines + 1) * factor avoids allocating an
-            # intermediate array for the `+ 1` operation and reduces overhead.
-            indices = (np.arange(1, self.lines + 1) * ((len(x) - 1) / self.lines)).astype(int)
+            # Performance Optimization: Using np.arange(1, lines + 1, dtype=float) avoids allocating an
+            # intermediate integer array and subsequent type promotion during the float multiplication.
+            indices = (np.arange(1, self.lines + 1, dtype=float) * ((len(x) - 1) / self.lines)).astype(int)
             # Remove duplicate indices to avoid redundant mesh lines
             # Use boolean masking (O(N)) instead of np.unique (O(N log N)) since indices are sorted
             if len(indices) > 0:
