@@ -51,4 +51,10 @@ def hohmann_transfer_dv(r1, r2, mu=3.986e14):
     # but the absolute delta v works out structurally as sum of differences).
     # Since r1 is usually smaller than r2 (going up), v_transfer_p > v1 and v2 > v_transfer_a
     # We can use the differences safely to calculate absolute dv magnitudes:
-    return abs(math.sqrt(2.0 * mu_r1 - mu_a) - math.sqrt(mu_r1)) + abs(math.sqrt(mu_r2) - math.sqrt(2.0 * mu_r2 - mu_a))
+    # Performance Optimization: Since r1 < r2 implies an outward transfer (where both velocity
+    # differences are positive) and r1 > r2 implies an inward transfer (both differences negative),
+    # their signs are always guaranteed to match. Thus, abs(A) + abs(B) mathematically simplifies
+    # to abs(A + B), saving a Python function call and intermediate evaluation overhead.
+    # We also alias `math.sqrt` locally to avoid repeated global/module attribute lookups.
+    sqrt = math.sqrt
+    return abs(sqrt(2.0 * mu_r1 - mu_a) - sqrt(mu_r1) + sqrt(mu_r2) - sqrt(2.0 * mu_r2 - mu_a))
