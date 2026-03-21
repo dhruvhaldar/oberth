@@ -101,34 +101,37 @@
             const ctx = document.getElementById('ispChart').getContext('2d');
 
             if (ispChart) {
-                ispChart.destroy();
-            }
-
-            ispChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.of.map(val => val.toFixed(2)),
-                    datasets: [{
-                        label: `Specific Impulse (s) - ${data.propellants.join('/')}`,
-                        data: data.isp,
-                        borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: {
-                            title: { display: true, text: 'Mixture Ratio (O/F)' }
-                        },
-                        y: {
-                            title: { display: true, text: 'Isp (s)' }
+                ispChart.data.labels = data.of.map(val => val.toFixed(2));
+                ispChart.data.datasets[0].label = `Specific Impulse (s) - ${data.propellants.join('/')}`;
+                ispChart.data.datasets[0].data = data.isp;
+                ispChart.update();
+            } else {
+                ispChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.of.map(val => val.toFixed(2)),
+                        datasets: [{
+                            label: `Specific Impulse (s) - ${data.propellants.join('/')}`,
+                            data: data.isp,
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Mixture Ratio (O/F)' }
+                            },
+                            y: {
+                                title: { display: true, text: 'Isp (s)' }
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
     </script>
 </body>
