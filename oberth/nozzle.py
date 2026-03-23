@@ -99,22 +99,28 @@ class MethodOfCharacteristics:
         else:
             # Performance Optimization: Using np.arange(1, lines + 1, dtype=float) avoids allocating an
             # intermediate integer array and subsequent type promotion during the float multiplication.
-            indices = (np.arange(1, self.lines + 1, dtype=float) * ((len(x) - 1) / self.lines)).astype(int)
+            # Pre-calculating the float factor avoids allocating an intermediate array for the division.
+            factor = (len(x) - 1) / self.lines
+            indices = (np.arange(1, self.lines + 1, dtype=float) * factor).astype(int)
             # Remove duplicate indices to avoid redundant mesh lines
             # Use boolean masking (O(N)) instead of np.unique (O(N log N)) since indices are sorted
             if len(indices) > 0:
-                indices = indices[np.concatenate(([True], indices[1:] != indices[:-1]))]
-
-        end_xs = x[indices]
-        end_ys = y[indices]
+                # Performance Optimization: Pre-allocating the mask array and assigning directly
+                # avoids creating intermediate boolean arrays and np.concatenate allocation overhead.
+                mask = np.empty(len(indices), dtype=bool)
+                mask[0] = True
+                mask[1:] = indices[1:] != indices[:-1]
+                indices = indices[mask]
 
         # Pre-allocate one array for the mesh (lines, 2 points, 2 coordinates)
         # Start points are already 0 at mesh_array[:, 0, :]
         mesh_array = np.zeros((len(indices), 2, 2))
 
         # Fill end points
-        mesh_array[:, 1, 0] = end_xs
-        mesh_array[:, 1, 1] = end_ys
+        # Performance Optimization: Directly assign mapped x and y values to the mesh array
+        # to avoid intermediate end_xs and end_ys array allocations.
+        mesh_array[:, 1, 0] = x[indices]
+        mesh_array[:, 1, 1] = y[indices]
 
         self.mesh_array = mesh_array
 
