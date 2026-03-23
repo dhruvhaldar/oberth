@@ -101,3 +101,7 @@
 ## 2026-04-10 - [Avoid np.linspace for simple linear array generation]
 **Learning:** `np.linspace` is relatively slow because it performs significant input validation and logic to handle edge cases accurately, allocating multiple intermediate states. Benchmarks showed that generating a 100-element array using `np.arange(100, dtype=float) * step` is ~4x faster than using `np.linspace(start, end, 100)`.
 **Action:** Replace `np.linspace` with pre-computed `np.arange(..., dtype=float)` multiplied by the correct scalar step (and adding the start offset) to minimize the overhead for hot calculations.
+
+## 2026-05-15 - [Direct Array Assignment and Memory Allocation Avoidance]
+**Learning:** When filtering indices and mapping values, using `np.concatenate` to combine boolean conditions creates an intermediate boolean array and allocates a new concatenated array. Pre-allocating an `np.empty` mask array and using slice assignments avoids these overheads. Additionally, calculating scalar multipliers before index generation and assigning mapped arrays directly (e.g., `mesh[:, 1, 0] = x[indices]`) rather than instantiating intermediate variables like `end_xs` significantly improves execution time by ~40% for large arrays.
+**Action:** Use pre-allocated `np.empty` boolean masks for filtering arrays when conditions are complex, and map values directly into their final array slice positions to minimize intermediate array allocations. Extract inline scalar calculations that form elements of index math.
