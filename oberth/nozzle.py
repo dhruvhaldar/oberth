@@ -67,24 +67,26 @@ class MethodOfCharacteristics:
         # Passes through (0, rt)
         # rt = A(-L)^2 + re  => A = (rt - re) / L^2
 
-        if length > 0:
-            # Performance Optimization: Using in-place operators (*=, +=) avoids the allocation
-            # of multiple intermediate NumPy arrays during squaring, scaling, and addition,
-            # improving execution time and memory efficiency.
-            A = (rt - re) / (length * length)
-            diff = x - length
-            diff *= diff
-            diff *= A
-            diff += re
-            y = diff
-        else:
-            y = np.full_like(x, rt)
-
         # Optimized list creation using numpy (approx 15% faster than list(zip(...)))
         # Further optimized by pre-allocating array instead of using column_stack (~15% faster)
         self.contour_array = np.empty((len(x), 2))
         self.contour_array[:, 0] = x
-        self.contour_array[:, 1] = y
+
+        y = self.contour_array[:, 1]
+
+        if length > 0:
+            # Performance Optimization: By referencing the pre-allocated contour_array slice directly
+            # and using np.subtract with out=y, we completely avoid allocating intermediate `diff` arrays.
+            # Using in-place operators (*=, +=) avoids the allocation of multiple intermediate
+            # NumPy arrays during squaring, scaling, and addition, improving execution time
+            # and memory efficiency.
+            A = (rt - re) / (length * length)
+            np.subtract(x, length, out=y)
+            y *= y
+            y *= A
+            y += re
+        else:
+            y.fill(rt)
 
         # Generate dummy characteristics for visualization
         # In real MOC, these are lines of constant Riemann invariant
