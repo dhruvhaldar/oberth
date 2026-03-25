@@ -124,8 +124,14 @@
                 .x(d => xScale(d[0]))
                 .y(d => yScale(d[1]));
 
+            // Performance Boost: Use a dedicated line generator for the bottom wall to avoid O(N) intermediate array
+            // allocations from mapping the contour array (e.g., data.contour.map(d => [d[0], -d[1]])).
+            const lineGeneratorBottom = d3.line()
+                .x(d => xScale(d[0]))
+                .y(d => yScale(-d[1]));
+
             const wallPath = lineGenerator(data.contour);
-            const wallPathBottom = lineGenerator(data.contour.map(d => [d[0], -d[1]]));
+            const wallPathBottom = lineGeneratorBottom(data.contour);
 
             svg.append("path")
                 .attr("d", wallPath)
@@ -145,15 +151,20 @@
                 // Reduces DOM nodes from 2*N to 1
                 // Performance Boost: Array.map().join('') is ~2x faster than string concatenation in a loop
                 // for very large datasets (e.g., thousands of lines) due to how JS engines allocate memory.
+
+                // Performance Boost: Pre-calculate yScale(0) once. Since the yScale domain is symmetric
+                // around 0, yScale(-y) is mathematically equivalent to 2 * yScale(0) - yScale(y).
+                // This completely eliminates thousands of redundant scale function calls inside the map loop.
+                const y0 = yScale(0);
                 const pathData = data.mesh.map(line => {
                     const x1 = xScale(line[0][0]);
                     const y1 = yScale(line[0][1]);
                     const x2 = xScale(line[1][0]);
                     const y2 = yScale(line[1][1]);
 
-                    // Lower mesh line (symmetric)
-                    const y1_lower = yScale(-line[0][1]);
-                    const y2_lower = yScale(-line[1][1]);
+                    // Lower mesh line (symmetric) - Avoids D3 scale logic overhead
+                    const y1_lower = 2 * y0 - y1;
+                    const y2_lower = 2 * y0 - y2;
 
                     return `M${x1},${y1}L${x2},${y2}M${x1},${y1_lower}L${x2},${y2_lower}`;
                 }).join('');
