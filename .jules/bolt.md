@@ -137,3 +137,7 @@
 ## 2024-04-06 - Pre-computed Normalized Algebraic Arrays
 **Learning:** When calculating scaled array coordinates from a linear space, algebraically substituting the normalized layout array into the final equation can reveal that dynamic scaling variables (like length) cancel out. By pre-computing the remaining normalized expression as a static constant array, you can replace multiple dynamic array operations (subtraction, squaring, multiplication) with a single, highly optimized array multiplication.
 **Action:** Always check if scaling variables in array math can be algebraically simplified or canceled out by substituting normalized layout arrays before running dynamic NumPy operations.
+
+## 2024-05-26 - [Avoid Redundant Static Coordinates in Geometric Payloads]
+**Learning:** Storing static origin coordinates `[0, 0]` repeatedly for every line segment in a geometric API payload wastes backend memory, doubles the JSON serialization overhead, inflates network payload size, and slows down frontend DOM string rendering.
+**Action:** When returning arrays of line segments that share a static origin or common feature, omit the redundant static data from the backend structures (e.g., return only the endpoints `[x, y]`). Reconstruct the full segments in the frontend using a single shared constant.

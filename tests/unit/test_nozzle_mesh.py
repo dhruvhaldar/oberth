@@ -17,9 +17,9 @@ def test_mesh_generation_unique_lines():
     mesh = moc.mesh
 
     # Extract end points of the mesh lines
-    # mesh format: list of lists of points [[(start_x, start_y), (end_x, end_y)], ...]
-    # we know start points are (0,0), so we check end points
-    end_points = [(line[1][0], line[1][1]) for line in mesh]
+    # mesh format: list of endpoints [x, y]
+    # we know start points are implicitly (0,0) due to optimization, so we check end points
+    end_points = [(line[0], line[1]) for line in mesh]
 
     # Check for uniqueness
     unique_end_points = set(end_points)
@@ -42,7 +42,7 @@ def test_mesh_generation_lines_edge_case():
     moc.solve()
     mesh = moc.mesh
 
-    end_points = [(line[1][0], line[1][1]) for line in mesh]
+    end_points = [(line[0], line[1]) for line in mesh]
     unique_end_points = set(end_points)
 
     assert len(mesh) == len(unique_end_points), f"Expected {len(unique_end_points)} unique lines, but got {len(mesh)}"

@@ -155,18 +155,18 @@
                 // Performance Boost: Pre-calculate yScale(0) once. Since the yScale domain is symmetric
                 // around 0, yScale(-y) is mathematically equivalent to 2 * yScale(0) - yScale(y).
                 // This completely eliminates thousands of redundant scale function calls inside the map loop.
+                // We also pre-calculate the constant origin (x0, y0) since the backend now only returns endpoints
+                // to save memory, payload size, and rendering overhead.
+                const x0 = xScale(0);
                 const y0 = yScale(0);
                 const pathData = data.mesh.map(line => {
-                    const x1 = xScale(line[0][0]);
-                    const y1 = yScale(line[0][1]);
-                    const x2 = xScale(line[1][0]);
-                    const y2 = yScale(line[1][1]);
+                    const x2 = xScale(line[0]);
+                    const y2 = yScale(line[1]);
 
                     // Lower mesh line (symmetric) - Avoids D3 scale logic overhead
-                    const y1_lower = 2 * y0 - y1;
                     const y2_lower = 2 * y0 - y2;
 
-                    return `M${x1},${y1}L${x2},${y2}M${x1},${y1_lower}L${x2},${y2_lower}`;
+                    return `M${x0},${y0}L${x2},${y2}M${x0},${y0}L${x2},${y2_lower}`;
                 }).join('');
 
                 svg.append("path")
