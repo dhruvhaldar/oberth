@@ -119,17 +119,10 @@ class MethodOfCharacteristics:
             # the same integer. We can completely skip the O(N) duplicate filtering mask logic
             # to avoid intermediate array allocations and branch evaluations (~35% faster mesh gen).
 
-        # Pre-allocate one array for the mesh (lines, 2 points, 2 coordinates)
-        # Start points are already 0 at mesh_array[:, 0, :]
-        mesh_array = np.zeros((len(indices), 2, 2))
-
-        # Fill end points
-        # Performance Optimization: Directly assign mapped x and y values to the mesh array
-        # to avoid intermediate end_xs and end_ys array allocations.
-        mesh_array[:, 1, 0] = x[indices]
-        mesh_array[:, 1, 1] = y[indices]
-
-        self.mesh_array = mesh_array
+        # Performance Optimization: Instead of storing full segments [[0,0], [x,y]],
+        # we only store the endpoints. This eliminates the `np.zeros` allocation,
+        # avoids duplicating static origin coordinates, and halves the JSON payload size.
+        self.mesh_array = self.contour_array[indices]
 
         return self.wall_contour
 
@@ -156,10 +149,15 @@ class MethodOfCharacteristics:
         # Uses in-place negation on a copied array for the symmetric lower mesh.
         # Plot characteristics
         if self.mesh_array.size > 0:
-            lc_upper = mc.LineCollection(self.mesh_array, colors='b', alpha=0.3)
+            # Reconstruct segments from endpoints
+            origin = np.zeros((len(self.mesh_array), 1, 2))
+            endpoints = self.mesh_array[:, np.newaxis, :]
+            segments = np.concatenate([origin, endpoints], axis=1)
+
+            lc_upper = mc.LineCollection(segments, colors='b', alpha=0.3)
             ax.add_collection(lc_upper)
 
-            mesh_lower = self.mesh_array.copy()
+            mesh_lower = segments.copy()
             mesh_lower[:, :, 1] = -mesh_lower[:, :, 1]
             lc_lower = mc.LineCollection(mesh_lower, colors='b', alpha=0.3)
             ax.add_collection(lc_lower)
