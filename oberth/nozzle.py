@@ -72,10 +72,6 @@ class MethodOfCharacteristics:
         l_cone = (re - rt) / TAN_15_DEG
         length = 0.8 * l_cone
 
-        # Performance Optimization: Generating the array by multiplying a pre-computed layout array
-        # avoids np.arange instantiation and is ~45% faster than evaluating `np.arange` and allocating internally.
-        x = _X_NORMALIZED * length
-
         # Parabolic approximation: y = A(x - L)^2 + re
         # Slope at exit is 0 (ideal expansion)
         # Passes through (0, rt)
@@ -83,8 +79,14 @@ class MethodOfCharacteristics:
 
         # Optimized list creation using numpy (approx 15% faster than list(zip(...)))
         # Further optimized by pre-allocating array instead of using column_stack (~15% faster)
-        self.contour_array = np.empty((len(x), 2))
-        self.contour_array[:, 0] = x
+        # Performance Optimization: Allocating the final array directly and calculating values into
+        # its slices using the `out` parameter avoids allocating and copying intermediate arrays.
+        n_points = len(_X_NORMALIZED) # Constant 100
+        self.contour_array = np.empty((n_points, 2))
+
+        # Calculate x coordinates directly into the first column slice
+        x = self.contour_array[:, 0]
+        np.multiply(_X_NORMALIZED, length, out=x)
 
         y = self.contour_array[:, 1]
 
@@ -103,17 +105,17 @@ class MethodOfCharacteristics:
         # Vectorized mesh generation
         # Improves performance by ~2.4x for large line counts (e.g., 50k lines: 0.22s -> 0.09s)
         # Indices corresponding to equal spacing in 'i' mapped to x array indices
-        if self.lines >= len(x):
+        if self.lines >= n_points:
             # Optimization: If requested lines exceed or match resolution, we select all points.
             # Avoids generating large intermediate arrays and sorting.
-            indices = np.arange(len(x))
+            indices = np.arange(n_points)
         else:
             # Performance Optimization: Using np.arange(1, lines + 1, dtype=float) avoids allocating an
             # intermediate integer array and subsequent type promotion during the float multiplication.
             # Pre-calculating the float factor avoids allocating an intermediate array for the division.
-            factor = (len(x) - 1) / self.lines
+            factor = (n_points - 1) / self.lines
             indices = (np.arange(1, self.lines + 1, dtype=float) * factor).astype(int)
-            # Performance Optimization: Since we are in the `else` block where `self.lines < len(x)`,
+            # Performance Optimization: Since we are in the `else` block where `self.lines < n_points`,
             # `factor` is mathematically guaranteed to be > 1.0. Therefore, the distance between
             # consecutive elements in the float array is > 1.0, and they will never truncate to
             # the same integer. We can completely skip the O(N) duplicate filtering mask logic

@@ -141,3 +141,7 @@
 ## 2024-05-26 - [Avoid Redundant Static Coordinates in Geometric Payloads]
 **Learning:** Storing static origin coordinates `[0, 0]` repeatedly for every line segment in a geometric API payload wastes backend memory, doubles the JSON serialization overhead, inflates network payload size, and slows down frontend DOM string rendering.
 **Action:** When returning arrays of line segments that share a static origin or common feature, omit the redundant static data from the backend structures (e.g., return only the endpoints `[x, y]`). Reconstruct the full segments in the frontend using a single shared constant.
+
+## 2026-04-09 - [Eliminate Intermediate Arrays by Pre-allocating and Using np.multiply out]
+**Learning:** When creating multi-column arrays in NumPy, generating an entire column into a temporary array (e.g., `x = _X_NORMALIZED * length`) and then assigning it (`contour_array[:, 0] = x`) causes an unnecessary memory allocation and copy. By allocating the full result array first and computing values directly into its slices using the `out` parameter of NumPy ufuncs (e.g., `np.multiply(_X_NORMALIZED, length, out=contour_array[:, 0])`), we bypass intermediate allocations and improve execution time significantly.
+**Action:** Always pre-allocate the target array if the size is known, and calculate values directly into its slices using in-place operations like `np.multiply(..., out=...)` rather than assigning dynamically created temporary arrays.
