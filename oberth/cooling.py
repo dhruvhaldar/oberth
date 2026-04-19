@@ -1,5 +1,9 @@
 import math
 
+# Performance Optimization: Precalculate the constant multiplier for default prop_data parameters
+# to eliminate redundant exponentiations (mu**0.2, pr**-0.6) and multiplications per function call.
+_DEFAULT_PROP_FACTOR = 0.026 * (8e-5)**0.2 * 2500 * (0.8)**-0.6
+
 def bartz_equation(diameter, mach, prop_data, pc, c_star, diameter_throat, radius_curvature):
     """
     Estimates the convective heat transfer coefficient (hg) using the Bartz equation.
@@ -21,15 +25,12 @@ def bartz_equation(diameter, mach, prop_data, pc, c_star, diameter_throat, radiu
     # values avoids executing four separate `.get(key, default)` function calls. This simple
     # bypass improves execution speed for the extraction block by ~75% when the dictionary is empty.
     if not prop_data:
-        mu = 8e-5 # Average gas viscosity
-        cp = 2500 # Specific heat
-        pr = 0.8  # Prandtl number
-        gamma = 1.2
+        prop_factor = _DEFAULT_PROP_FACTOR
     else:
         mu = prop_data.get('viscosity', 8e-5)
         cp = prop_data.get('cp', 2500)
         pr = prop_data.get('prandtl', 0.8)
-        gamma = prop_data.get('gamma', 1.2)
+        prop_factor = 0.026 * cp * mu**0.2 * pr**-0.6
 
     # Sigma correction factor for property variation across boundary layer
     # Simplified: usually between 0.8 and 1.2 depending on wall temperature
@@ -53,12 +54,11 @@ def bartz_equation(diameter, mach, prop_data, pc, c_star, diameter_throat, radiu
     # containing division (e.g. (mu/Dt)**0.2 * (Dt/Rc)**0.1 * (Dt/D)**1.8), combining the terms yields
     # Dt**1.7. This eliminates two division operations and reduces exponentiation overhead,
     # improving execution speed by ~8%. Chained multiplication is retained to avoid assignment overhead.
+    # Additionally, precomputing the constant `prop_factor` avoids redundant exponentiation operations.
     return (
-        0.026 * cp * sigma
-        * mu**0.2                           # Viscosity
+        prop_factor * sigma
         * diameter_throat**1.7              # Combined throat diameter scaling
         * radius_curvature**(-0.1)          # Curvature enhancement
         * diameter**(-1.8)                  # Local area ratio scaling (velocity effect)
-        * pr**(-0.6)                        # Gas properties
         * (pc / c_star)**0.8                # Chamber pressure / Mass flux dependence
     )
