@@ -149,3 +149,7 @@
 ## 2026-06-25 - [Bypass Multiple Dictionary Gets with Empty Check]
 **Learning:** In performance-critical functions, extracting multiple optional values from a dictionary using `.get(key, default)` sequentially incurs significant Python function call overhead. Benchmarks showed that when the dictionary is empty, extracting four values took ~1.95s per 10 million calls. By first checking if the dictionary is empty (`if not prop_data:`) and directly assigning defaults, the time dropped to ~0.49s, yielding a ~75% speedup with negligible penalty for non-empty dictionaries.
 **Action:** In tight functions or loops, when extracting multiple optional values from a dictionary, check if the dictionary is empty first (`if not d:`) to bypass multiple `.get(key, default)` calls and improve execution speed.
+
+## 2026-06-25 - [Pre-calculate Combined Default Math Subexpressions]
+**Learning:** In tight mathematical functions with default arguments (like `bartz_equation`), calculating combined expressions containing expensive operations (like float exponentiation or multiplication) using the constant default values beforehand and storing the combined result as a module-level constant (e.g., `_DEFAULT_PROP_FACTOR`) bypasses redundant calculation overhead on every function call when defaults are used.
+**Action:** Pre-calculate combined mathematical constants based on default parameters as module-level constants to avoid redundant float calculations in frequently called math functions.

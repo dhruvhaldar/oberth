@@ -1,5 +1,10 @@
 import math
 
+# Performance Optimization: Calculating the combined expression of default properties
+# as a module-level constant bypasses redundant calculation overhead inside the tight function
+# when defaults are used.
+_DEFAULT_PROP_FACTOR = 0.026 * 2500 * 1.0 * (8e-5)**0.2 * 0.8**(-0.6)
+
 def bartz_equation(diameter, mach, prop_data, pc, c_star, diameter_throat, radius_curvature):
     """
     Estimates the convective heat transfer coefficient (hg) using the Bartz equation.
@@ -18,23 +23,18 @@ def bartz_equation(diameter, mach, prop_data, pc, c_star, diameter_throat, radiu
     """
 
     # Performance Optimization: Checking if the dictionary is empty before extracting multiple optional
-    # values avoids executing four separate `.get(key, default)` function calls. This simple
-    # bypass improves execution speed for the extraction block by ~75% when the dictionary is empty.
+    # values avoids executing four separate `.get(key, default)` function calls.
+    # Additionally, directly assigning a pre-calculated `_DEFAULT_PROP_FACTOR` completely avoids
+    # exponentiation and multiplication overhead for the default case.
     if not prop_data:
-        mu = 8e-5 # Average gas viscosity
-        cp = 2500 # Specific heat
-        pr = 0.8  # Prandtl number
-        gamma = 1.2
+        prop_factor = _DEFAULT_PROP_FACTOR
     else:
         mu = prop_data.get('viscosity', 8e-5)
         cp = prop_data.get('cp', 2500)
         pr = prop_data.get('prandtl', 0.8)
-        gamma = prop_data.get('gamma', 1.2)
-
-    # Sigma correction factor for property variation across boundary layer
-    # Simplified: usually between 0.8 and 1.2 depending on wall temperature
-    # Using a constant for preliminary sizing
-    sigma = 1.0
+        # gamma is removed as it was unused in the equation below
+        sigma = 1.0
+        prop_factor = 0.026 * cp * sigma * mu**0.2 * pr**(-0.6)
 
     # Bartz Equation:
     # hg = [0.026 / Dt^0.2] * [(mu^0.2 * Cp) / Pr^0.6] * [(Pc * g0 / c*)^0.8] * [(Dt / Rc)^0.1] * [(At / A)^0.9] * sigma
@@ -51,14 +51,12 @@ def bartz_equation(diameter, mach, prop_data, pc, c_star, diameter_throat, radiu
     # Performance Optimization: Algebraically refactored the expression to precompute and combine
     # exponents of the throat diameter (Dt). Instead of executing three separate exponentiations
     # containing division (e.g. (mu/Dt)**0.2 * (Dt/Rc)**0.1 * (Dt/D)**1.8), combining the terms yields
-    # Dt**1.7. This eliminates two division operations and reduces exponentiation overhead,
-    # improving execution speed by ~8%. Chained multiplication is retained to avoid assignment overhead.
+    # Dt**1.7. This eliminates two division operations and reduces exponentiation overhead.
+    # We further group the `prop_factor` to reduce runtime multiplications.
     return (
-        0.026 * cp * sigma
-        * mu**0.2                           # Viscosity
+        prop_factor
         * diameter_throat**1.7              # Combined throat diameter scaling
         * radius_curvature**(-0.1)          # Curvature enhancement
         * diameter**(-1.8)                  # Local area ratio scaling (velocity effect)
-        * pr**(-0.6)                        # Gas properties
         * (pc / c_star)**0.8                # Chamber pressure / Mass flux dependence
     )
