@@ -44,6 +44,9 @@ class MethodOfCharacteristics:
         self.lines = lines
         self.mesh_array = np.array([])
         self.contour_array = np.array([])
+        self._indices_cache = None
+        self._lines_cache = None
+        self._contour_buffer = np.empty((100, 2))
 
     @property
     def mesh(self):
@@ -82,7 +85,7 @@ class MethodOfCharacteristics:
         # Performance Optimization: Allocating the final array directly and calculating values into
         # its slices using the `out` parameter avoids allocating and copying intermediate arrays.
         n_points = len(_X_NORMALIZED) # Constant 100
-        self.contour_array = np.empty((n_points, 2))
+        self.contour_array = self._contour_buffer
 
         # Calculate x coordinates directly into the first column slice
         x = self.contour_array[:, 0]
@@ -105,21 +108,25 @@ class MethodOfCharacteristics:
         # Vectorized mesh generation
         # Improves performance by ~2.4x for large line counts (e.g., 50k lines: 0.22s -> 0.09s)
         # Indices corresponding to equal spacing in 'i' mapped to x array indices
-        if self.lines >= n_points:
-            # Optimization: If requested lines exceed or match resolution, we select all points.
-            # Avoids generating large intermediate arrays and sorting.
-            indices = np.arange(n_points)
-        else:
-            # Performance Optimization: Using np.arange(1, lines + 1, dtype=float) avoids allocating an
-            # intermediate integer array and subsequent type promotion during the float multiplication.
-            # Pre-calculating the float factor avoids allocating an intermediate array for the division.
-            factor = (n_points - 1) / self.lines
-            indices = (np.arange(1, self.lines + 1, dtype=float) * factor).astype(int)
-            # Performance Optimization: Since we are in the `else` block where `self.lines < n_points`,
-            # `factor` is mathematically guaranteed to be > 1.0. Therefore, the distance between
-            # consecutive elements in the float array is > 1.0, and they will never truncate to
-            # the same integer. We can completely skip the O(N) duplicate filtering mask logic
-            # to avoid intermediate array allocations and branch evaluations (~35% faster mesh gen).
+        if self._indices_cache is None or self._lines_cache != self.lines:
+            if self.lines >= n_points:
+                # Optimization: If requested lines exceed or match resolution, we select all points.
+                # Avoids generating large intermediate arrays and sorting.
+                self._indices_cache = np.arange(n_points)
+            else:
+                # Performance Optimization: Using np.arange(1, lines + 1, dtype=float) avoids allocating an
+                # intermediate integer array and subsequent type promotion during the float multiplication.
+                # Pre-calculating the float factor avoids allocating an intermediate array for the division.
+                factor = (n_points - 1) / self.lines
+                self._indices_cache = (np.arange(1, self.lines + 1, dtype=float) * factor).astype(int)
+                # Performance Optimization: Since we are in the `else` block where `self.lines < n_points`,
+                # `factor` is mathematically guaranteed to be > 1.0. Therefore, the distance between
+                # consecutive elements in the float array is > 1.0, and they will never truncate to
+                # the same integer. We can completely skip the O(N) duplicate filtering mask logic
+                # to avoid intermediate array allocations and branch evaluations (~35% faster mesh gen).
+            self._lines_cache = self.lines
+
+        indices = self._indices_cache
 
         # Performance Optimization: Instead of storing full segments [[0,0], [x,y]],
         # we only store the endpoints. This eliminates the `np.zeros` allocation,
