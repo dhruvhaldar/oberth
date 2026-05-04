@@ -157,3 +157,7 @@
 ## 2026-05-04 - [Cache Static Slicing Arrays and Reuse Buffers in API Calls]
 **Learning:** In geometric generation methods like `MethodOfCharacteristics.solve()` that are frequently called by APIs, dynamically generating index slicing arrays (e.g., using `np.arange(...)`) and allocating fresh result arrays (`np.empty`) on every execution creates redundant overhead. By caching the slicing indices as a class attribute (since they depend on static properties like `lines`) and recycling a single pre-allocated `_contour_buffer` array, execution time drops by ~15-20%. This is safe because the frontend payloads are ultimately serialized via `.tolist()` copies anyway.
 **Action:** When working with classes that repeatedly generate geometry or datasets, cache static index arrays that depend only on unchanging class attributes, and reuse pre-allocated array buffers instead of calling `np.empty` dynamically on every method execution.
+
+## 2026-05-30 - [Re-evaluating np.where vs Boolean Array Math for Small Arrays]
+**Learning:** While pure boolean array math `(condition) * (val1 - val2) + val2` avoids function call overhead and is faster for large arrays, `np.where(condition, val1, val2)` is actually faster for small arrays (e.g., size 50) in current NumPy versions. The overhead of pure array math evaluations exceeds the C-level branching efficiency of `np.where` for small N.
+**Action:** Use `np.where` when assigning constant scalars based on a condition for small arrays.
