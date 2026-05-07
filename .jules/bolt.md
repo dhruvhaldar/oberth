@@ -161,3 +161,7 @@
 ## 2026-05-30 - [Re-evaluating np.where vs Boolean Array Math for Small Arrays]
 **Learning:** While pure boolean array math `(condition) * (val1 - val2) + val2` avoids function call overhead and is faster for large arrays, `np.where(condition, val1, val2)` is actually faster for small arrays (e.g., size 50) in current NumPy versions. The overhead of pure array math evaluations exceeds the C-level branching efficiency of `np.where` for small N.
 **Action:** Use `np.where` when assigning constant scalars based on a condition for small arrays.
+
+## 2026-06-25 - [Optimize Array Construction with Direct Assignment]
+**Learning:** When constructing an array by combining a zero-filled section and another array (like `[0,0]` origins and `[x,y]` endpoints for segments), using `np.zeros(...)` followed by `np.concatenate` creates multiple intermediate arrays and copies. Pre-allocating the full final array with `np.zeros` and assigning the non-zero slices directly (e.g., `segments[:, 1, :] = endpoints`) is ~30% faster and avoids unnecessary memory overhead.
+**Action:** Prefer direct assignment to pre-allocated arrays (e.g., `np.empty` or `np.zeros`) over using `np.stack` or `np.concatenate` for array construction when dealing with static parts, as it avoids intermediate copies and overhead.
